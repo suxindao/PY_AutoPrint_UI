@@ -1,0 +1,78 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Environment files
+.env*
+!.env.production
+!.env.development
+!.env.testing
+.venv/
+venv/
+env/
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# MyPy & Pyright
+.mypy_cache/
+.pyright/
+
+# pytest
+.cache/
+*.cover
+coverage.xml
+htmlcov/
+
+# FastAPI / Uvicorn logs
+*.log
+
+# VS Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# Mac & Linux
+.DS_Store
+Thumbs.db
+
+# Jupyter Notebook checkpoints (if any)
+.ipynb_checkpoints
+
+# SQLAlchemy SQLite db (if using for testing)
+*.db
+
+# Docker
+*.tar
+docker-compose.override.yml
+docker-compose.local.yml
+
+# Compiled binary artifacts (if any)
+build/
+dist/
+*.egg-info/
+
+# Python Wheels
+*.whl
+
+# Node (if frontend involved)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Unit test coverage reports
+.coverage
+
+# Ignore local test/credentials
+*.local.*
+
+#Ignore font file
+*.ttf
+!/font/HYFengBoMoJiTuo-75U.ttf
+
