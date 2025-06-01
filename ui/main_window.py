@@ -131,6 +131,7 @@ class MainWindow(QMainWindow):
 
         # 控制按钮
         button_layout = QHBoxLayout()
+
         self.start_btn = QPushButton("开始打印")
         self.start_btn.clicked.connect(self.start_printing)
         button_layout.addWidget(self.start_btn)
@@ -143,6 +144,12 @@ class MainWindow(QMainWindow):
         self.save_btn = QPushButton("保存配置")
         self.save_btn.clicked.connect(self.save_config)
         button_layout.addWidget(self.save_btn)
+
+        # 添加纸张信息按钮
+        self.paper_info_btn = QPushButton("打印机信息")
+        self.paper_info_btn.clicked.connect(self.show_printer_info)
+        button_layout.addWidget(self.paper_info_btn)
+
         main_layout.addLayout(button_layout)
 
         # 设置布局间距和对齐
@@ -184,6 +191,77 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "成功", "配置已保存!")
         else:
             QMessageBox.warning(self, "错误", "保存配置失败!")
+
+    def show_paper_info(self):
+        """显示打印机支持的纸张信息"""
+        try:
+            import win32print
+
+            if not win32print.EnumPrinters(win32print.PRINTER_ENUM_LOCAL):
+                self.log_message("⚠️ 未检测到可用的打印机")
+                return
+
+            printer_name = win32print.GetDefaultPrinter()
+            self.log_message(f"\n🖨️ 正在获取打印机 '{printer_name}' 的纸张信息...")
+
+            hprinter = win32print.OpenPrinter(printer_name)
+            forms = win32print.EnumForms(hprinter)
+
+            self.log_message(f"✅ 找到 {len(forms)} 种支持的纸张尺寸:")
+            for i, form in enumerate(forms, 1):
+                width_cm = form['Size']['cx'] / 1000
+                height_cm = form['Size']['cy'] / 1000
+                self.log_message(
+                    f"{i}. {form['Name']} "
+                    f"(宽度: {width_cm:.1f}cm × 高度: {height_cm:.1f}cm)"
+                )
+
+            win32print.ClosePrinter(hprinter)
+
+        except win32print.error as e:
+            self.log_message(f"❌ 打印机API错误: {str(e)}")
+        except Exception as e:
+            self.log_message(f"❌ 获取纸张信息失败: {str(e)}")
+
+    def show_printer_info(self):
+        self.log_edit.clear()
+        """显示完整的打印机信息"""
+        try:
+            import win32print
+
+            printer_name = win32print.GetDefaultPrinter()
+            hprinter = win32print.OpenPrinter(printer_name)
+
+            # 获取打印机详细信息
+            info_level = 2
+            printer_info = win32print.GetPrinter(hprinter, info_level)
+
+            self.log_message("\n📋 打印机详细信息:")
+            self.log_message(f"名称: {printer_info['pPrinterName']}")
+            self.log_message(f"驱动程序: {printer_info['pDriverName']}")
+            self.log_message(f"端口: {printer_info['pPortName']}")
+            self.log_message(f"状态: {self.get_printer_status(printer_info['Status'])}")
+
+            # 显示纸张信息
+            self.show_paper_info()
+
+            win32print.ClosePrinter(hprinter)
+
+        except Exception as e:
+            self.log_message(f"❌ 获取打印机信息失败: {str(e)}")
+
+    def get_printer_status(self, status_code):
+        """将状态代码转换为可读文本"""
+        status_map = {
+            0: "准备就绪",
+            1: "暂停",
+            2: "错误",
+            3: "待删除",
+            4: "纸张卡住",
+            5: "纸张用完",
+            # ... 其他状态码 ...
+        }
+        return status_map.get(status_code, f"未知状态 ({status_code})")
 
     def select_source_dir(self):
         dir_path = QFileDialog.getExistingDirectory(self, "选择源目录")
