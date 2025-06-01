@@ -166,6 +166,10 @@ class MainWindow(QMainWindow):
         self.wait_sleep_spin.setValue(config.get("wait_prompt_sleep", 30))
 
     def save_config(self):
+        if not self.source_edit.text():
+            QMessageBox.warning(self, "警告", "请先选择源目录!")
+            return
+
         config = {
             "source_dir": self.source_edit.text(),
             "monthly_printer_name": self.printer_edit.text(),
@@ -176,12 +180,9 @@ class MainWindow(QMainWindow):
             "wait_prompt_sleep": self.wait_sleep_spin.value()
         }
         self.config_manager.update_config(config)
-        # if self.config_manager.save_config():
-        #     QMessageBox.information(self, "成功", "配置已保存!")
-        # else:
-        #     QMessageBox.warning(self, "错误", "保存配置失败!")
-
-        if  not self.config_manager.save_config():
+        if self.config_manager.save_config():
+            QMessageBox.information(self, "成功", "配置已保存!")
+        else:
             QMessageBox.warning(self, "错误", "保存配置失败!")
 
     def select_source_dir(self):
