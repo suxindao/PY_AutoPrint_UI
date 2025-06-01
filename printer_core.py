@@ -150,12 +150,16 @@ class PrinterCore:
 
         # 删除空目录
         src_dir = os.path.dirname(src_file)
-        if not any(f for f in os.listdir(src_dir) if not f.startswith("~$")):
-            try:
-                os.rmdir(src_dir)
-                self.logger.info(f"🗑️ 删除空目录: {src_dir}")
-            except Exception as e:
-                self.logger.warning(f"⚠️ 删除目录失败: {src_dir} - {e}")
+
+        while src_dir != src_root:
+            if not os.path.exists(src_dir):
+                break  # 路径已不存在，不能继续
+            if not any(f for f in os.listdir(src_dir) if not f.startswith("~$")):
+                try:
+                    os.rmdir(src_dir)
+                    logging.info(f"🗑️ 删除空目录: {src_dir}")
+                except Exception as e:
+                    logging.warning(f"⚠️ 删除目录失败: {src_dir} - {e}")
 
     def show_message_box_with_timeout(self, text, caption, timeout_ms):
         MB_YESNO = 0x04
@@ -242,5 +246,5 @@ class PrinterCore:
                 else:
                     self.logger.info("⏩ 用户选择跳过等待")
 
-        self.logger.info("✅ 所有文件打印完成")
+        # self.logger.info("✅ 所有文件打印完成")
         return True
