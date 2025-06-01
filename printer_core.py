@@ -16,6 +16,7 @@ from typing import Callable, Dict, Any
 
 class PrinterCore:
     def __init__(self, config: dict, log_callback: Callable[[str], None] = print):
+        self._is_running = True  # 新增
         self.config = config
         self.log_callback = log_callback
         self._setup_logging()
@@ -183,11 +184,19 @@ class PrinterCore:
         )
 
     def run(self) -> bool:
+        if not self._is_running:
+            return False
+
         if not os.path.exists(self.source_root):
             self.logger.error(f"❌ 源目录不存在: {self.source_root}")
             return False
 
         for root, _, files in os.walk(self.source_root, topdown=False):
+
+            if not self._is_running:  # 添加中断检查
+                self.logger.info("🛑 打印被用户中断")
+                return False
+
             any_printed = False
 
             for name in files:
@@ -233,5 +242,5 @@ class PrinterCore:
                 else:
                     self.logger.info("⏩ 用户选择跳过等待")
 
-        # self.logger.info("✅ 所有文件打印完成")
+        self.logger.info("✅ 所有文件打印完成")
         return True

@@ -17,19 +17,22 @@ class PrinterThread(QThread):
     def __init__(self, config: Dict[str, Any], parent=None):
         super().__init__(parent)
         self.config = config
-        self._is_running = True
+        self._is_running = True  # 控制线程运行的标志
 
     def run(self):
         try:
             printer = PrinterCore(self.config, self.log_message.emit)
-            success = printer.run()
-            self.finished.emit(success)
+            while self._is_running:  # 添加循环检查
+                if not printer.run():  # 修改run方法使其可中断
+                    break
+            self.finished.emit(True)
         except Exception as e:
             self.log_message.emit(f"❌ 打印线程异常: {str(e)}")
             self.finished.emit(False)
 
     def stop(self):
-        self._is_running = False
+        self._is_running = False  # 设置标志位停止线程
+        self.quit()  # 确保线程退出
 
 
 class MainWindow(QMainWindow):
@@ -45,6 +48,7 @@ class MainWindow(QMainWindow):
         # 设置大字体
         self.setFont(QFont("Microsoft YaHei", 12))  # 设置默认字体
         self.init_ui()
+
         # 默认全屏显示
         # self.showMaximized()
 
@@ -208,10 +212,11 @@ class MainWindow(QMainWindow):
 
     def stop_printing(self):
         if self.printer_thread and self.printer_thread.isRunning():
-            self.printer_thread.stop()
-            self.printer_thread.quit()
-            self.printer_thread.wait()
-            self.log_message("🛑 打印已停止")
+            self.printer_thread.stop()  # 调用停止方法
+            self.log_message("🛑 正在停止打印...")
+            if not self.printer_thread.wait(2000):  # 等待2秒线程结束
+                self.printer_thread.terminate()  # 强制终止
+                self.log_message("⚠️ 打印线程已强制终止")
 
         self.start_btn.setEnabled(True)
         self.stop_btn.setEnabled(False)
