@@ -176,9 +176,12 @@ class MainWindow(QMainWindow):
             "wait_prompt_sleep": self.wait_sleep_spin.value()
         }
         self.config_manager.update_config(config)
-        if self.config_manager.save_config():
-            QMessageBox.information(self, "成功", "配置已保存!")
-        else:
+        # if self.config_manager.save_config():
+        #     QMessageBox.information(self, "成功", "配置已保存!")
+        # else:
+        #     QMessageBox.warning(self, "错误", "保存配置失败!")
+
+        if  not self.config_manager.save_config():
             QMessageBox.warning(self, "错误", "保存配置失败!")
 
     def select_source_dir(self):

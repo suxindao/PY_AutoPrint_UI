@@ -148,12 +148,10 @@ class PrinterCore:
         shutil.move(src_file, dest_file)
         self.logger.info(f"📁 已移动文件: {dest_file}")
 
-        # 删除空目录
         src_dir = os.path.dirname(src_file)
 
-        while src_dir != src_root:
-            if not os.path.exists(src_dir):
-                break  # 路径已不存在，不能继续
+        # 删除空目录，根目录（源目录）不删除
+        if src_dir != src_root:
             if not any(f for f in os.listdir(src_dir) if not f.startswith("~$")):
                 try:
                     os.rmdir(src_dir)
@@ -187,6 +185,7 @@ class PrinterCore:
             timeout_ms  # Timeout in milliseconds
         )
 
+    # 返回 False 状态表示打印完成或打印出错，不再打印
     def run(self) -> bool:
         if not self._is_running:
             return False
@@ -201,8 +200,6 @@ class PrinterCore:
                 self.logger.info("🛑 打印被用户中断")
                 return False
 
-            any_printed = False
-
             for name in files:
                 if name.startswith("~$"):
                     continue
@@ -216,15 +213,15 @@ class PrinterCore:
                 elif name.lower().endswith((".xls", ".xlsx")):
                     success = self.print_excel(full_path, use_alt=is_monthly)
 
-                time.sleep(self.DELAY_SECONDS)
-
                 if success:
                     self.move_and_cleanup(full_path, self.source_root, self.target_root)
-                    any_printed = True
                 else:
                     return False
 
-            if any_printed and self.ENABLE_WAIT_PROMPT:
+                time.sleep(self.DELAY_SECONDS)
+
+            # 当前目录文件打印完后，提示用户等待30秒
+            if self.ENABLE_WAIT_PROMPT:
                 msg = (
                     f"📁 当前目录打印完成: \n{root}\n\n📢 将在 {self.WAIT_PROMPT_SLEEP} 秒后继续打印下一个目录..."
                     "请选择操作：\n"
@@ -246,5 +243,5 @@ class PrinterCore:
                 else:
                     self.logger.info("⏩ 用户选择跳过等待")
 
-        # self.logger.info("✅ 所有文件打印完成")
-        return True
+        # 所有文件打印完成，打印终止， 返回 False 状态 = 不再打印
+        return False
