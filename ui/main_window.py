@@ -219,12 +219,6 @@ class MainWindow(QMainWindow):
         paper_layout.addWidget(self.paper_zoom_spin)
         paper_group.setLayout(paper_layout)
 
-        # 在打印机列表刷新时同时加载纸张信息
-        self.refresh_printer_list()
-
-        # 替换原有的打印机设置组
-        config_layout.insertWidget(2, paper_group)  # 放在打印机设置下面
-
         # 月结打印机设置
         printer_layout = QHBoxLayout()
         printer_layout.addWidget(QLabel("月结单打印机:"))
@@ -234,6 +228,20 @@ class MainWindow(QMainWindow):
         printer_layout.addWidget(self.printer_edit)
         config_layout.addLayout(printer_layout)
 
+        # 月结单打印机选择
+        monthly_printer_layout = QHBoxLayout()
+        monthly_printer_label = QLabel("月结单打印机:")
+        self.monthly_printer_combo = QComboBox()
+        monthly_printer_layout.addWidget(monthly_printer_label)
+        monthly_printer_layout.addWidget(self.monthly_printer_combo)
+        config_layout.addLayout(monthly_printer_layout)
+
+        # 在打印机列表刷新时同时加载纸张信息
+        self.refresh_printer_list()
+
+        # 替换原有的打印机设置组
+        config_layout.insertWidget(2, paper_group)  # 放在打印机设置下面
+
         # 设置布局间距和对齐
         main_layout.setSpacing(15)
         main_layout.setContentsMargins(20, 20, 20, 20)
@@ -241,7 +249,8 @@ class MainWindow(QMainWindow):
         # 设置控件大小策略
         for widget in [self.source_edit, self.printer_edit,
                        self.paper_size_spin, self.paper_zoom_spin,
-                       self.delay_spin, self.wait_sleep_spin]:
+                       self.delay_spin, self.wait_sleep_spin,
+                       self.monthly_printer_combo, ]:
             widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
     def load_config(self):
@@ -276,9 +285,13 @@ class MainWindow(QMainWindow):
             "wait_prompt_sleep": self.wait_sleep_spin.value(),
         }
 
-        # 获取当前选择的打印机
+        # 保存默认打印机
         if hasattr(self, 'printer_combo'):
             config['selected_printer'] = self.get_selected_printer()
+
+        # 保存月结单打印机
+        if hasattr(self, 'monthly_printer_combo'):
+            config['monthly_printer_name'] = self.monthly_printer_combo.currentText()
 
         self.config_manager.update_config(config)
         if self.config_manager.save_config():
@@ -389,6 +402,7 @@ class MainWindow(QMainWindow):
             for i, printer in enumerate(self.available_printers):
                 printer_name = printer[2]
                 self.printer_combo.addItem(printer_name)
+                self.monthly_printer_combo.addItem(printer_name)
 
                 # 标记默认打印机
                 if printer_name == default_printer:
@@ -396,6 +410,13 @@ class MainWindow(QMainWindow):
                     self.printer_combo.setItemText(i, f"{printer_name} (默认)")
                     # 加载该打印机的纸张类型
                     self.load_paper_sizes(printer_name)
+
+            # 尝试恢复保存的月结单打印机设置
+            saved_monthly_printer = self.config_manager.get("monthly_printer_name", "")
+            if saved_monthly_printer:
+                index = self.monthly_printer_combo.findText(saved_monthly_printer)
+                if index >= 0:
+                    self.monthly_printer_combo.setCurrentIndex(index)
 
             # 设置默认选中
             self.printer_combo.setCurrentIndex(default_index)
