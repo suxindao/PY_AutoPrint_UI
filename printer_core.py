@@ -79,11 +79,18 @@ class PrinterCore:
     def is_monthly_file(self, filename):
         return "月结单" in filename
 
+    def get_printer(self, is_monthly=False):
+        """获取当前选择的打印机"""
+        if is_monthly and hasattr(self, 'MONTHLY_PRINTER_NAME'):
+            return self.MONTHLY_PRINTER_NAME
+        return self.DEFAULT_PRINTER
+
     def print_pdf(self, path, use_alt=False):
 
         # printer = self.DEFAULT_PRINTER
         # 使用主窗口选择的打印机
-        printer = self.config.get("selected_printer", win32print.GetDefaultPrinter())
+        # printer = self.config.get("selected_printer", win32print.GetDefaultPrinter())
+        printer = self.get_printer(use_alt)
 
         self.logger.info(f"📄 打印 PDF: {path}")
         self.logger.info(f"🖨️ 打印机: {printer}")
@@ -99,7 +106,8 @@ class PrinterCore:
     def print_excel(self, path, use_alt=False):
         # printer = self.DEFAULT_PRINTER
         # 使用主窗口选择的打印机
-        printer = self.config.get("selected_printer", win32print.GetDefaultPrinter())
+        # printer = self.config.get("selected_printer", win32print.GetDefaultPrinter())
+        printer = self.get_printer(use_alt)
 
         self.logger.info(f"")
         self.logger.info(f"📊 打印 Excel: {path}")

@@ -219,15 +219,6 @@ class MainWindow(QMainWindow):
         paper_layout.addWidget(self.paper_zoom_spin)
         paper_group.setLayout(paper_layout)
 
-        # 月结打印机设置
-        printer_layout = QHBoxLayout()
-        printer_layout.addWidget(QLabel("月结单打印机:"))
-        self.printer_edit = QLineEdit()
-        self.printer_edit.setPlaceholderText("留空则使用默认打印机")
-        self.printer_edit.setDisabled(True)
-        printer_layout.addWidget(self.printer_edit)
-        config_layout.addLayout(printer_layout)
-
         # 月结单打印机选择
         monthly_printer_layout = QHBoxLayout()
         monthly_printer_label = QLabel("月结单打印机:")
@@ -247,7 +238,7 @@ class MainWindow(QMainWindow):
         main_layout.setContentsMargins(20, 20, 20, 20)
 
         # 设置控件大小策略
-        for widget in [self.source_edit, self.printer_edit,
+        for widget in [self.source_edit,
                        self.paper_size_spin, self.paper_zoom_spin,
                        self.delay_spin, self.wait_sleep_spin,
                        self.monthly_printer_combo, ]:
@@ -256,7 +247,6 @@ class MainWindow(QMainWindow):
     def load_config(self):
         config = self.config_manager.get_all()
         self.source_edit.setText(config.get("source_dir", ""))
-        self.printer_edit.setText(config.get("monthly_printer_name", ""))
         self.paper_size_spin.setValue(config.get("default_paper_size", 132))
         self.paper_zoom_spin.setValue(config.get("default_paper_zoom", 75))
         self.delay_spin.setValue(config.get("delay_seconds", 5))
@@ -277,7 +267,6 @@ class MainWindow(QMainWindow):
 
         config = {
             "source_dir": self.source_edit.text(),
-            "monthly_printer_name": self.printer_edit.text(),
             "default_paper_size": self.paper_size_spin.value(),
             "default_paper_zoom": self.paper_zoom_spin.value(),
             "delay_seconds": self.delay_spin.value(),
