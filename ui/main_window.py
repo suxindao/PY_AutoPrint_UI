@@ -263,7 +263,6 @@ class MainWindow(QMainWindow):
 
     def get_default_printer_by_default_name(self):
         for index in range(self.printer_combo.count()):
-            self.log_message(f"✅ {self.printer_combo.itemText(index)}")
             if "默认" in self.printer_combo.itemText(index):
                 return self.printer_combo.itemText(index).replace(" (默认)", "")
         return self.get_selected_printer()
