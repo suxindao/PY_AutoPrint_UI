@@ -259,9 +259,7 @@ class MainWindow(QMainWindow):
             default_paper_id = self.paper_size_spin.value() - 1
         else:
             default_paper_id = len(self.paper_sizes) - 1
-        index = self.paper_combo.findData(default_paper_id)
-        if index >= 0:
-            self.paper_combo.setCurrentIndex(index)
+        self.paper_combo.setCurrentIndex(default_paper_id)
 
     def save_config(self):
         if not self.source_edit.text():
