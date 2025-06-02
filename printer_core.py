@@ -80,7 +80,10 @@ class PrinterCore:
         return "月结单" in filename
 
     def print_pdf(self, path, use_alt=False):
-        printer = self.DEFAULT_PRINTER
+
+        # printer = self.DEFAULT_PRINTER
+        # 使用主窗口选择的打印机
+        printer = self.config.get("selected_printer", win32print.GetDefaultPrinter())
 
         self.logger.info(f"📄 打印 PDF: {path}")
         self.logger.info(f"🖨️ 打印机: {printer}")
@@ -94,7 +97,9 @@ class PrinterCore:
             return False
 
     def print_excel(self, path, use_alt=False):
-        printer = self.DEFAULT_PRINTER
+        # printer = self.DEFAULT_PRINTER
+        # 使用主窗口选择的打印机
+        printer = self.config.get("selected_printer", win32print.GetDefaultPrinter())
 
         self.logger.info(f"")
         self.logger.info(f"📊 打印 Excel: {path}")

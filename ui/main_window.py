@@ -1,13 +1,14 @@
 from typing import Dict, Any, Optional
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGroupBox,
                              QLabel, QLineEdit, QSpinBox, QDoubleSpinBox, QCheckBox,
-                             QPushButton, QTextEdit, QFileDialog, QMessageBox, QSizePolicy)
+                             QPushButton, QTextEdit, QFileDialog, QMessageBox, QSizePolicy, QComboBox)
 from PyQt5.QtCore import Qt, pyqtSignal, QThread
 
 from utils.config_manager import ConfigManager
 from printer_core import PrinterCore
 from utils.path_utils import get_app_path, ensure_directory_exists
 from PyQt5.QtGui import QFont
+import win32print
 
 
 class PrinterThread(QThread):
@@ -38,6 +39,9 @@ class PrinterThread(QThread):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+
+        # 存储打印机列表
+        self.available_printers = []
 
         # 确保日志目录存在
         self.log_dir = ensure_directory_exists(get_app_path("logs"))
@@ -158,6 +162,36 @@ class MainWindow(QMainWindow):
 
         main_layout.addLayout(button_layout)
 
+        # 在打印机设置组中添加打印机选择下拉框
+        printer_group = QGroupBox("打印机设置")
+        printer_layout = QVBoxLayout()  # 改为垂直布局
+
+        # 打印机选择标签
+        printer_label = QLabel("选择打印机:")
+        printer_label.setFont(QFont("Microsoft YaHei", 12))
+
+        # 打印机下拉选择框
+        self.printer_combo = QComboBox()
+        self.printer_combo.setFont(QFont("Microsoft YaHei", 12))
+        self.printer_combo.setMinimumWidth(300)
+
+        # 刷新打印机列表按钮
+        refresh_btn = QPushButton("刷新列表")
+        refresh_btn.setFont(QFont("Microsoft YaHei", 10))
+        refresh_btn.clicked.connect(self.refresh_printer_list)
+
+        # 将控件添加到布局
+        printer_layout.addWidget(printer_label)
+        printer_layout.addWidget(self.printer_combo)
+        printer_layout.addWidget(refresh_btn)
+        printer_group.setLayout(printer_layout)
+
+        # 替换原有的打印机设置组
+        config_layout.insertWidget(1, printer_group)  # 放在源目录设置下面
+
+        # 初始化打印机列表
+        self.refresh_printer_list()
+
         # 设置布局间距和对齐
         main_layout.setSpacing(15)
         main_layout.setContentsMargins(20, 20, 20, 20)
@@ -190,8 +224,13 @@ class MainWindow(QMainWindow):
             "default_paper_zoom": self.paper_zoom_spin.value(),
             "delay_seconds": self.delay_spin.value(),
             "enable_wait_prompt": self.wait_prompt_check.isChecked(),
-            "wait_prompt_sleep": self.wait_sleep_spin.value()
+            "wait_prompt_sleep": self.wait_sleep_spin.value(),
         }
+
+        # 获取当前选择的打印机
+        if hasattr(self, 'printer_combo'):
+            config['selected_printer'] = self.get_selected_printer()
+
         self.config_manager.update_config(config)
         if self.config_manager.save_config():
             QMessageBox.information(self, "成功", "配置已保存!")
@@ -228,6 +267,47 @@ class MainWindow(QMainWindow):
             self.log_message(f"❌ 打印机API错误: {str(e)}")
         except Exception as e:
             self.log_message(f"❌ 获取纸张信息失败: {str(e)}")
+
+    def refresh_printer_list(self):
+        """刷新打印机列表并设置默认选中"""
+        try:
+            import win32print
+
+            self.log_message("\n🔄 正在刷新打印机列表...")
+            self.printer_combo.clear()
+
+            # 获取所有打印机
+            self.available_printers = win32print.EnumPrinters(
+                win32print.PRINTER_ENUM_LOCAL | win32print.PRINTER_ENUM_CONNECTIONS
+            )
+
+            # 获取默认打印机
+            default_printer = win32print.GetDefaultPrinter()
+            default_index = 0
+
+            # 添加到下拉框
+            for i, printer in enumerate(self.available_printers):
+                printer_name = printer[2]
+                self.printer_combo.addItem(printer_name)
+
+                # 标记默认打印机
+                if printer_name == default_printer:
+                    default_index = i
+                    self.printer_combo.setItemText(i, f"{printer_name} (默认)")
+
+            # 设置默认选中
+            self.printer_combo.setCurrentIndex(default_index)
+            self.log_message(f"✅ 已加载 {len(self.available_printers)} 台打印机")
+
+        except Exception as e:
+            self.log_message(f"❌ 刷新打印机列表失败: {str(e)}")
+
+    def get_selected_printer(self):
+        """获取当前选中的打印机"""
+        if self.printer_combo.count() > 0:
+            # 去除"(默认)"标记
+            return self.printer_combo.currentText().replace(" (默认)", "")
+        return win32print.GetDefaultPrinter()  # 回退到系统默认
 
     # 打印机设置
     def open_printer_settings(self):
