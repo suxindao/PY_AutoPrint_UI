@@ -146,9 +146,15 @@ class MainWindow(QMainWindow):
         button_layout.addWidget(self.save_btn)
 
         # 添加纸张信息按钮
-        self.paper_info_btn = QPushButton("打印机信息")
+        self.paper_info_btn = QPushButton("纸张信息")
         self.paper_info_btn.clicked.connect(self.show_printer_info)
         button_layout.addWidget(self.paper_info_btn)
+
+        # 添加"打开打印机设置"按钮
+        self.printer_setup_btn = QPushButton("打印机设置")
+        self.printer_setup_btn.clicked.connect(self.open_printer_settings)
+        self.printer_setup_btn.setToolTip("打开系统打印机设置窗口")  # 鼠标悬停提示
+        button_layout.addWidget(self.printer_setup_btn)
 
         main_layout.addLayout(button_layout)
 
@@ -222,6 +228,44 @@ class MainWindow(QMainWindow):
             self.log_message(f"❌ 打印机API错误: {str(e)}")
         except Exception as e:
             self.log_message(f"❌ 获取纸张信息失败: {str(e)}")
+
+    # 打印机设置
+    def open_printer_settings(self):
+        methods = [
+            self._open_via_win32api,
+            self._open_via_system_control,
+            self._open_via_command
+        ]
+
+        for method in methods:
+            if method():
+                return
+
+        self.log_message("❌ 所有方法尝试失败，请手动打开打印机设置")
+
+    def _open_via_win32api(self):
+        try:
+            import win32api
+            win32api.ShellExecute(0, "open", "control.exe", "printers", None, 1)
+            return True
+        except:
+            return False
+
+    def _open_via_system_control(self):
+        try:
+            import os
+            os.system('control printers')
+            return True
+        except:
+            return False
+
+    def _open_via_command(self):
+        try:
+            import subprocess
+            subprocess.run(['rundll32', 'printui.dll,PrintUIEntry'])
+            return True
+        except:
+            return False
 
     def show_printer_info(self):
         self.log_edit.clear()
