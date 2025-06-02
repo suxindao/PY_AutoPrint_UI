@@ -81,9 +81,14 @@ class PrinterCore:
 
     def get_printer(self, is_monthly=False):
         """获取当前选择的打印机"""
+        printer_name = self.DEFAULT_PRINTER
         if is_monthly and hasattr(self, 'MONTHLY_PRINTER_NAME'):
-            return self.MONTHLY_PRINTER_NAME
-        return self.DEFAULT_PRINTER
+            printer_name = self.MONTHLY_PRINTER_NAME
+
+        # 尝试设置默认打印机
+        win32print.SetDefaultPrinter(printer_name)
+
+        return printer_name
 
     def print_pdf(self, path, use_alt=False):
 
