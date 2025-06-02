@@ -19,10 +19,11 @@ class PrinterThread(QThread):
         super().__init__(parent)
         self.config = config
         self._is_running = True  # 控制线程运行的标志
+        self._parent = parent
 
     def run(self):
         try:
-            printer = PrinterCore(self.config, self.log_message.emit)
+            printer = PrinterCore(self.config, self._parent, self.log_message.emit)
             while self._is_running:  # 添加循环检查
                 if not printer.run():  # 修改run方法使其可中断
                     break
@@ -164,7 +165,7 @@ class MainWindow(QMainWindow):
         printer_layout = QVBoxLayout()  # 改为垂直布局
 
         # 打印机选择标签
-        printer_label = QLabel("选择打印机:")
+        printer_label = QLabel("设置默认打印机:")
 
         # 打印机下拉选择框
         self.printer_combo = QComboBox()
@@ -241,7 +242,7 @@ class MainWindow(QMainWindow):
         for widget in [self.source_edit,
                        self.paper_size_spin, self.paper_zoom_spin,
                        self.delay_spin, self.wait_sleep_spin,
-                       self.monthly_printer_combo, ]:
+                       self.printer_combo, self.monthly_printer_combo, ]:
             widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
     def load_config(self):
@@ -260,6 +261,13 @@ class MainWindow(QMainWindow):
             default_paper_id = len(self.paper_sizes) - 1
         self.paper_combo.setCurrentIndex(default_paper_id)
 
+    def get_default_printer_by_default_name(self):
+        for index in range(self.printer_combo.count()):
+            self.log_message(f"✅ {self.printer_combo.itemText(index)}")
+            if "默认" in self.printer_combo.itemText(index):
+                return self.printer_combo.itemText(index).replace(" (默认)", "")
+        return self.get_selected_printer()
+
     def save_config(self, showAlert=True):
         if not self.source_edit.text():
             QMessageBox.warning(self, "警告", "请先选择源目录!")
@@ -276,7 +284,8 @@ class MainWindow(QMainWindow):
 
         # 保存默认打印机
         if hasattr(self, 'printer_combo'):
-            config['selected_printer'] = self.get_selected_printer()
+            # config['selected_printer'] = self.get_selected_printer()
+            config['selected_printer'] = self.get_default_printer_by_default_name()
 
         # 保存月结单打印机
         if hasattr(self, 'monthly_printer_combo'):
@@ -603,7 +612,7 @@ class MainWindow(QMainWindow):
         if self.printer_thread and self.printer_thread.isRunning():
             return
 
-        self.save_config(False)  # 开始前自动保存配置
+        self.save_config(False)  # 开始前自动保存配置，不提示保存成功弹出框
 
         config = self.config_manager.get_all()
         self.printer_thread = PrinterThread(config, self)

@@ -15,9 +15,10 @@ from typing import Callable, Dict, Any
 
 
 class PrinterCore:
-    def __init__(self, config: dict, log_callback: Callable[[str], None] = print):
+    def __init__(self, config: dict, parent, log_callback: Callable[[str], None] = print):
         self._is_running = True  # 新增
         self.config = config
+        self.parent = parent
         self.log_callback = log_callback
         self._setup_logging()
 
@@ -211,6 +212,16 @@ class PrinterCore:
         if not os.path.exists(self.source_root):
             self.logger.error(f"❌ 源目录不存在: {self.source_root}")
             return False
+
+        try:
+            default_printer = self.parent.get_default_printer_by_default_name()
+            # 尝试设置默认打印机
+            win32print.SetDefaultPrinter(default_printer)
+        except Exception as e:
+            self.logger.error(f"❌ 设置默认打印机失败111: {str(e)}")
+            # 尝试使用管理员权限
+            if "Access is denied" in str(e):
+                self.logger.error("⚠️ 需要管理员权限，正在尝试获取权限...")
 
         for root, _, files in os.walk(self.source_root, topdown=False):
 
