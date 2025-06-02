@@ -165,8 +165,8 @@ class PrinterCore:
                     logging.warning(f"⚠️ 删除目录失败: {src_dir} - {e}")
 
     def show_message_box_with_timeout(self, text, caption, timeout_ms):
-        MB_YESNO = 0x04
-        MB_ICONQUESTION = 0x20
+        MB_OK = 0x00
+        MB_ICONINFORMATION = 0x40
         IDYES = 6
         IDNO = 7
 
@@ -185,7 +185,7 @@ class PrinterCore:
             0,  # hWnd
             text,
             caption,
-            MB_YESNO | MB_ICONQUESTION,
+            MB_OK | MB_ICONINFORMATION,
             0,  # Default button (0 = first button)
             timeout_ms  # Timeout in milliseconds
         )
@@ -225,28 +225,30 @@ class PrinterCore:
 
                 time.sleep(self.DELAY_SECONDS)
 
-            # 当前目录文件打印完后，提示用户等待30秒
-            if self.ENABLE_WAIT_PROMPT:
+            # 如果诊所目录文件全部打印完后，提示用户等待30秒
+            if self.ENABLE_WAIT_PROMPT and os.path.basename(root).isdigit():
                 msg = (
-                    f"📁 当前目录打印完成: \n{root}\n\n📢 将在 {self.WAIT_PROMPT_SLEEP} 秒后继续打印下一个目录..."
-                    "请选择操作：\n"
-                    f"【是】 = 是的，继续等待 {self.WAIT_PROMPT_SLEEP} 秒\n"
-                    "【否】 = 继续打印"
+                    f"📁 当前诊所打印完成: {os.path.basename(root)}\n📢 将在 {self.WAIT_PROMPT_SLEEP} 秒后继续打印下一个诊所...\n"
+                    "\n"
+                    "【确定】 = 不等待，立即打印"
                 )
-                self.logger.info(f"📁 当前目录打印完成: {root}")
-                self.logger.info(f"📢 将在 {self.WAIT_PROMPT_SLEEP} 秒后继续打印下一个目录...")
+                self.logger.info(f"📁 当前诊所打印完成: {os.path.basename(root)}")
+                self.logger.info(f"📢 将在 {self.WAIT_PROMPT_SLEEP} 秒后继续打印下一个诊所...")
 
                 response = self.show_message_box_with_timeout(
                     msg,
-                    "📢 打印完成提示",
+                    "📢 打印完成",
                     int(self.WAIT_PROMPT_SLEEP * 1000)
                 )
 
-                if response == 6:  # IDYES
-                    self.logger.info(f"✅ 用户选择等待，等待 {self.WAIT_PROMPT_SLEEP} 秒...")
-                    time.sleep(self.WAIT_PROMPT_SLEEP)
-                else:
-                    self.logger.info("⏩ 用户选择跳过等待")
+                # if response == 6:  # IDYES
+                #     self.logger.info(f"✅ 用户选择等待，等待 {self.WAIT_PROMPT_SLEEP} 秒...")
+                #     time.sleep(self.WAIT_PROMPT_SLEEP)
+                # else:
+                #     self.logger.info("⏩ 用户选择跳过等待")
+
+                # 只显示一个按钮，点击继续打印
+                self.logger.info("⏩ 用户选择跳过等待")
 
         # 所有文件打印完成，打印终止， 返回 False 状态 = 不再打印
         return False

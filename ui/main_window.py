@@ -151,7 +151,7 @@ class MainWindow(QMainWindow):
         button_layout.addWidget(self.stop_btn)
 
         self.save_btn = QPushButton("保存配置")
-        self.save_btn.clicked.connect(self.save_config)
+        self.save_btn.clicked.connect(lambda: self.save_config(showAlert=True))
         button_layout.addWidget(self.save_btn)
 
         # 添加纸张信息按钮
@@ -261,7 +261,7 @@ class MainWindow(QMainWindow):
             default_paper_id = len(self.paper_sizes) - 1
         self.paper_combo.setCurrentIndex(default_paper_id)
 
-    def save_config(self):
+    def save_config(self, showAlert=True):
         if not self.source_edit.text():
             QMessageBox.warning(self, "警告", "请先选择源目录!")
             return
@@ -282,7 +282,8 @@ class MainWindow(QMainWindow):
 
         self.config_manager.update_config(config)
         if self.config_manager.save_config():
-            QMessageBox.information(self, "成功", "配置已保存!")
+            if showAlert:
+                QMessageBox.information(self, "成功", "配置已保存!")
         else:
             QMessageBox.warning(self, "错误", "保存配置失败!")
 
@@ -592,7 +593,7 @@ class MainWindow(QMainWindow):
         if self.printer_thread and self.printer_thread.isRunning():
             return
 
-        self.save_config()  # 开始前自动保存配置
+        self.save_config(False)  # 开始前自动保存配置
 
         config = self.config_manager.get_all()
         self.printer_thread = PrinterThread(config, self)
