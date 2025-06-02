@@ -43,6 +43,9 @@ class MainWindow(QMainWindow):
         # 存储打印机列表
         self.available_printers = []
 
+        # 存储纸张编号和名称的映射
+        self.paper_sizes = {}
+
         # 确保日志目录存在
         self.log_dir = ensure_directory_exists(get_app_path("logs"))
 
@@ -88,6 +91,7 @@ class MainWindow(QMainWindow):
         printer_layout.addWidget(QLabel("月结单打印机:"))
         self.printer_edit = QLineEdit()
         self.printer_edit.setPlaceholderText("留空则使用默认打印机")
+        self.printer_edit.setDisabled(True)
         printer_layout.addWidget(self.printer_edit)
         config_layout.addLayout(printer_layout)
 
@@ -96,19 +100,20 @@ class MainWindow(QMainWindow):
         paper_layout.addWidget(QLabel("针式打印机纸张编号:"))
         self.paper_size_spin = QSpinBox()
         self.paper_size_spin.setRange(1, 500)
+        self.paper_size_spin.setDisabled(True)
         paper_layout.addWidget(self.paper_size_spin)
 
-        paper_layout.addWidget(QLabel("缩放比例(%):"))
-        self.paper_zoom_spin = QSpinBox()
-        self.paper_zoom_spin.setRange(10, 200)
-        paper_layout.addWidget(self.paper_zoom_spin)
-        config_layout.addLayout(paper_layout)
+        # paper_layout.addWidget(QLabel("缩放比例(%):"))
+        # self.paper_zoom_spin = QSpinBox()
+        # self.paper_zoom_spin.setRange(10, 200)
+        # paper_layout.addWidget(self.paper_zoom_spin)
+        # config_layout.addLayout(paper_layout)
 
         # 其他设置
         other_layout = QHBoxLayout()
         other_layout.addWidget(QLabel("打印间隔(秒):"))
         self.delay_spin = QDoubleSpinBox()
-        self.delay_spin.setRange(0.1, 60)
+        self.delay_spin.setRange(1, 100)
         self.delay_spin.setSingleStep(0.5)
         other_layout.addWidget(self.delay_spin)
 
@@ -163,16 +168,15 @@ class MainWindow(QMainWindow):
         main_layout.addLayout(button_layout)
 
         # 在打印机设置组中添加打印机选择下拉框
-        printer_group = QGroupBox("打印机设置")
+        # printer_group = QGroupBox("打印机设置")
+        printer_group = QGroupBox("")
         printer_layout = QVBoxLayout()  # 改为垂直布局
 
         # 打印机选择标签
         printer_label = QLabel("选择打印机:")
-        printer_label.setFont(QFont("Microsoft YaHei", 12))
 
         # 打印机下拉选择框
         self.printer_combo = QComboBox()
-        self.printer_combo.setFont(QFont("Microsoft YaHei", 12))
         self.printer_combo.setMinimumWidth(300)
 
         # 第二行：操作按钮
@@ -180,12 +184,10 @@ class MainWindow(QMainWindow):
 
         # 刷新打印机列表按钮
         refresh_btn = QPushButton("刷新列表")
-        refresh_btn.setFont(QFont("Microsoft YaHei", 10))
         refresh_btn.clicked.connect(self.refresh_printer_list)
 
         # 新增"设为默认"按钮
         set_default_btn = QPushButton("设为默认")
-        set_default_btn.setFont(QFont("Microsoft YaHei", 10))
         set_default_btn.clicked.connect(self.set_default_printer)
         set_default_btn.setToolTip("将选中的打印机设置为系统默认打印机")
 
@@ -202,8 +204,35 @@ class MainWindow(QMainWindow):
         # 替换原有的打印机设置组
         config_layout.insertWidget(1, printer_group)  # 放在源目录设置下面
 
-        # 初始化打印机列表
+        # 修改纸张设置部分
+        # paper_group = QGroupBox("纸张设置")
+        paper_group = QGroupBox("")
+        paper_layout = QHBoxLayout()
+
+        # 纸张选择下拉框
+        paper_label = QLabel("纸张类型:")
+
+        self.paper_combo = QComboBox()
+        self.paper_combo.setMinimumWidth(250)
+        self.paper_combo.currentIndexChanged.connect(self.on_paper_selected)
+
+        # 缩放比例设置保持不变
+        zoom_label = QLabel("缩放比例(%):")
+        self.paper_zoom_spin = QSpinBox()
+        self.paper_zoom_spin.setRange(10, 200)
+
+        paper_layout.addWidget(paper_label)
+        paper_layout.addWidget(self.paper_combo)
+        # paper_layout.addStretch(1)
+        paper_layout.addWidget(zoom_label)
+        paper_layout.addWidget(self.paper_zoom_spin)
+        paper_group.setLayout(paper_layout)
+
+        # 在打印机列表刷新时同时加载纸张信息
         self.refresh_printer_list()
+
+        # 替换原有的打印机设置组
+        config_layout.insertWidget(2, paper_group)  # 放在打印机设置下面
 
         # 设置布局间距和对齐
         main_layout.setSpacing(15)
@@ -224,6 +253,15 @@ class MainWindow(QMainWindow):
         self.delay_spin.setValue(config.get("delay_seconds", 5))
         self.wait_prompt_check.setChecked(config.get("enable_wait_prompt", True))
         self.wait_sleep_spin.setValue(config.get("wait_prompt_sleep", 30))
+
+        # 设置纸张默认选择
+        if self.paper_size_spin.value() < len(self.paper_sizes):
+            default_paper_id = self.paper_size_spin.value() - 1
+        else:
+            default_paper_id = len(self.paper_sizes) - 1
+        index = self.paper_combo.findData(default_paper_id)
+        if index >= 0:
+            self.paper_combo.setCurrentIndex(index)
 
     def save_config(self):
         if not self.source_edit.text():
@@ -357,6 +395,8 @@ class MainWindow(QMainWindow):
                 if printer_name == default_printer:
                     default_index = i
                     self.printer_combo.setItemText(i, f"{printer_name} (默认)")
+                    # 加载该打印机的纸张类型
+                    self.load_paper_sizes(printer_name)
 
             # 设置默认选中
             self.printer_combo.setCurrentIndex(default_index)
@@ -409,6 +449,94 @@ class MainWindow(QMainWindow):
             return True
         except:
             return False
+
+    # start: 打印纸列表设置
+    def on_paper_selected(self, index):
+        """当选择纸张类型时的处理"""
+        if index >= 0 and self.paper_sizes:
+            paper_id = self.paper_combo.itemData(index)
+            self.log_message(f"📄 已选择纸张: {self.paper_combo.itemText(index)} (ID: {paper_id})")
+            self.paper_size_spin.setValue(int(paper_id))
+
+    def load_paper_sizes(self, printer_name):
+        """加载指定打印机支持的纸张类型"""
+        try:
+            import win32print
+
+            self.paper_combo.clear()
+            self.paper_sizes.clear()
+
+            hprinter = win32print.OpenPrinter(win32print.GetDefaultPrinter())
+            forms = win32print.EnumForms(hprinter)
+            win32print.ClosePrinter(hprinter)
+
+            # 常见针式打印机纸张类型映射
+            dot_matrix_papers = {
+                # 1: "Letter 8.5x11英寸",
+                # 2: "Legal 8.5x14英寸",
+                # 5: "A4 210x297毫米",
+                # 132: "连续纸(80列)",
+                # 133: "连续纸(132列)",
+                # 256: "自定义纸张"
+            }
+
+            self.log_message(f"✅ 找到 {len(forms)} 种支持的纸张尺寸:")
+            for i, form in enumerate(forms, 1):
+                width_cm = form['Size']['cx'] / 1000
+                height_cm = form['Size']['cy'] / 1000
+                # self.log_message(
+                #     f"{i}. {form['Name']} "
+                #     f"(宽度: {width_cm:.1f}cm × 高度: {height_cm:.1f}cm)"
+                # )
+                dot_matrix_papers[i] = f"{i}. {form['Name']}(宽度: {width_cm:.1f}cm × 高度: {height_cm:.1f}cm)"
+
+            # 添加特殊纸张类型
+            self.paper_sizes = {}
+            for paper_id, paper_name in dot_matrix_papers.items():
+                self.paper_combo.addItem(f"{paper_name}", paper_id)
+                self.paper_sizes[paper_id] = paper_name
+
+            # 添加打印机实际支持的纸张类型
+            for form in forms:
+                if form['Name'] not in dot_matrix_papers.values():
+                    paper_id = self._get_paper_id_by_size(form['Size'])
+                    if paper_id:
+                        self.paper_combo.addItem(
+                            f"{form['Name']} (ID:{paper_id})",
+                            paper_id
+                        )
+                        self.paper_sizes[paper_id] = form['Name']
+
+            # # 列表默认设置最后一个打印纸设置
+            # default_paper_id = len(dot_matrix_papers)
+            # index = self.paper_combo.findData(default_paper_id)
+            # if index >= 0:
+            #     self.paper_combo.setCurrentIndex(index)
+
+            return True
+
+        except Exception as e:
+            self.log_message(f"❌ 加载纸张类型失败: {str(e)}")
+            return False
+
+    def _get_paper_id_by_size(self, size):
+        """根据纸张尺寸获取标准ID"""
+        width, height = size['cx'], size['cy']
+        # A4: 210x297 mm (转换为0.1mm单位)
+        if abs(width - 2100) < 50 and abs(height - 2970) < 50:
+            return 9
+        # Letter: 215.9x279.4 mm
+        elif abs(width - 2159) < 50 and abs(height - 2794) < 50:
+            return 1
+        # 连续纸(80列)
+        elif width == 2410 and height == 2794:
+            return 132
+        # 连续纸(132列)
+        elif width == 3810 and height == 2794:
+            return 133
+        return None
+
+    # end: 打印纸列表设置
 
     def show_printer_info(self):
         self.log_edit.clear()

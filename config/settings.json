@@ -1,9 +1,10 @@
 {
     "source_dir": "D:/work/clinic/数据备份/2025Q2/0523_1_打印机模版/测试打印",
     "monthly_printer_name": "",
-    "default_paper_size": 132,
+    "default_paper_size": 108,
     "default_paper_zoom": 75,
-    "delay_seconds": 5.0,
+    "delay_seconds": 4.0,
     "enable_wait_prompt": true,
-    "wait_prompt_sleep": 30.0
+    "wait_prompt_sleep": 10.0,
+    "selected_printer": "Microsoft XPS Document Writer"
 }
