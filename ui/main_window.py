@@ -155,7 +155,7 @@ class MainWindow(QMainWindow):
         button_layout.addWidget(self.paper_info_btn)
 
         # 添加"打开打印机设置"按钮
-        self.printer_setup_btn = QPushButton("打印机设置")
+        self.printer_setup_btn = QPushButton("系统打印机设置")
         self.printer_setup_btn.clicked.connect(self.open_printer_settings)
         self.printer_setup_btn.setToolTip("打开系统打印机设置窗口")  # 鼠标悬停提示
         button_layout.addWidget(self.printer_setup_btn)
@@ -175,15 +175,28 @@ class MainWindow(QMainWindow):
         self.printer_combo.setFont(QFont("Microsoft YaHei", 12))
         self.printer_combo.setMinimumWidth(300)
 
+        # 第二行：操作按钮
+        printer_btn_layout = QHBoxLayout()
+
         # 刷新打印机列表按钮
         refresh_btn = QPushButton("刷新列表")
         refresh_btn.setFont(QFont("Microsoft YaHei", 10))
         refresh_btn.clicked.connect(self.refresh_printer_list)
 
+        # 新增"设为默认"按钮
+        set_default_btn = QPushButton("设为默认")
+        set_default_btn.setFont(QFont("Microsoft YaHei", 10))
+        set_default_btn.clicked.connect(self.set_default_printer)
+        set_default_btn.setToolTip("将选中的打印机设置为系统默认打印机")
+
         # 将控件添加到布局
+        printer_btn_layout.addWidget(refresh_btn)
+        printer_btn_layout.addWidget(set_default_btn)
+        # printer_btn_layout.addStretch()
+
         printer_layout.addWidget(printer_label)
         printer_layout.addWidget(self.printer_combo)
-        printer_layout.addWidget(refresh_btn)
+        printer_layout.addLayout(printer_btn_layout)
         printer_group.setLayout(printer_layout)
 
         # 替换原有的打印机设置组
@@ -267,6 +280,56 @@ class MainWindow(QMainWindow):
             self.log_message(f"❌ 打印机API错误: {str(e)}")
         except Exception as e:
             self.log_message(f"❌ 获取纸张信息失败: {str(e)}")
+
+    # 设置默认打印机
+    def set_default_printer(self):
+        """将选中的打印机设置为系统默认打印机"""
+        try:
+            import win32print
+
+            if self.printer_combo.count() == 0:
+                self.log_message("⚠️ 没有可用的打印机")
+                return
+
+            selected_printer = self.get_selected_printer()
+
+            # 尝试设置默认打印机
+            win32print.SetDefaultPrinter(selected_printer)
+
+            # 刷新列表显示新的默认打印机
+            self.refresh_printer_list()
+
+            self.log_message(f"✅ 已将 '{selected_printer}' 设置为默认打印机")
+
+        except Exception as e:
+            self.log_message(f"❌ 设置默认打印机失败: {str(e)}")
+            # 尝试使用管理员权限
+            if "Access is denied" in str(e):
+                self.log_message("⚠️ 需要管理员权限，正在尝试获取权限...")
+                self.run_as_admin(f'SetDefaultPrinter "{selected_printer}"')
+
+    def run_as_admin(self, command):
+        """尝试以管理员权限运行命令"""
+        try:
+            import ctypes
+            import sys
+
+            if ctypes.windll.shell32.IsUserAnAdmin():
+                return True
+
+            # 重新以管理员权限运行程序
+            ctypes.windll.shell32.ShellExecuteW(
+                None,
+                "runas",
+                sys.executable,
+                f"{sys.argv[0]} {command}",
+                None,
+                1
+            )
+            return True
+        except Exception as e:
+            self.log_message(f"❌ 获取管理员权限失败: {str(e)}")
+            return False
 
     def refresh_printer_list(self):
         """刷新打印机列表并设置默认选中"""
