@@ -86,15 +86,6 @@ class MainWindow(QMainWindow):
         source_layout.addWidget(self.source_btn)
         config_layout.addLayout(source_layout)
 
-        # 打印机设置
-        printer_layout = QHBoxLayout()
-        printer_layout.addWidget(QLabel("月结单打印机:"))
-        self.printer_edit = QLineEdit()
-        self.printer_edit.setPlaceholderText("留空则使用默认打印机")
-        self.printer_edit.setDisabled(True)
-        printer_layout.addWidget(self.printer_edit)
-        config_layout.addLayout(printer_layout)
-
         # 纸张设置
         paper_layout = QHBoxLayout()
         paper_layout.addWidget(QLabel("针式打印机纸张编号:"))
@@ -233,6 +224,15 @@ class MainWindow(QMainWindow):
 
         # 替换原有的打印机设置组
         config_layout.insertWidget(2, paper_group)  # 放在打印机设置下面
+
+        # 月结打印机设置
+        printer_layout = QHBoxLayout()
+        printer_layout.addWidget(QLabel("月结单打印机:"))
+        self.printer_edit = QLineEdit()
+        self.printer_edit.setPlaceholderText("留空则使用默认打印机")
+        self.printer_edit.setDisabled(True)
+        printer_layout.addWidget(self.printer_edit)
+        config_layout.addLayout(printer_layout)
 
         # 设置布局间距和对齐
         main_layout.setSpacing(15)
