@@ -385,6 +385,7 @@ class MainWindow(QMainWindow):
 
             self.log_message("\n🔄 正在刷新打印机列表...")
             self.printer_combo.clear()
+            self.monthly_printer_combo.clear()
 
             # 获取所有打印机
             self.available_printers = win32print.EnumPrinters(
