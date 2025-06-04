@@ -229,6 +229,9 @@ class PrinterCore:
                 self.logger.info("🛑 打印被用户中断")
                 return False
 
+            total_files = [f for f in files if not f.startswith("~$")]
+            remaining = len(total_files)
+
             for name in files:
                 if name.startswith("~$"):
                     continue
@@ -246,6 +249,9 @@ class PrinterCore:
                     self.move_and_cleanup(full_path, self.source_root, self.target_root)
                 else:
                     return False
+
+                remaining -= 1
+                self.logger.info(f"📄 剩余待打印文件数: {remaining}")
 
                 time.sleep(self.DELAY_SECONDS)
 
