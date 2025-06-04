@@ -251,7 +251,7 @@ class PrinterCore:
                     return False
 
                 remaining -= 1
-                self.logger.info(f"📄 剩余待打印文件数: {remaining}")
+                self.logger.info(f"📄 剩余待打印文件数:  {remaining}")
 
                 time.sleep(self.DELAY_SECONDS)
 
