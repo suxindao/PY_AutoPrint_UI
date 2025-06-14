@@ -97,12 +97,18 @@ class PrinterCore:
         # 使用主窗口选择的打印机
         # printer = self.config.get("selected_printer", win32print.GetDefaultPrinter())
         printer = self.get_printer(use_alt)
+        is_bw = self.config.get("bw_print", False)
 
         self.logger.info(f"📄 打印 PDF: {path}")
         self.logger.info(f"🖨️ 打印机: {printer}")
 
         try:
-            win32api.ShellExecute(0, "print", path, f'/d:"{printer}"', ".", 0)
+            # 构造打印命令
+            params = f'/d:"{printer}"'
+            if is_bw:
+                params += ' /p "Color=Monochrome"'  # Adobe Reader参数
+
+            win32api.ShellExecute(0, "print", path, params, ".", 0)
             self.logger.info(f"✅ 打印成功 (PDF)")
             return True
         except Exception as e:
@@ -114,6 +120,7 @@ class PrinterCore:
         # 使用主窗口选择的打印机
         # printer = self.config.get("selected_printer", win32print.GetDefaultPrinter())
         printer = self.get_printer(use_alt)
+        is_bw = self.config.get("bw_print", False)
 
         self.logger.info(f"")
         self.logger.info(f"📊 打印 Excel: {path}")
@@ -142,6 +149,10 @@ class PrinterCore:
                     sheet.PageSetup.FitToPagesWide = False
                     sheet.PageSetup.FitToPagesTall = False
                     sheet.PageSetup.Orientation = 1
+
+                # 黑白打印设置
+                if is_bw:
+                    sheet.PageSetup.BlackAndWhite = True  # Excel黑白打印属性
 
             wb.PrintOut(From=1, To=1, ActivePrinter=printer)
             self.logger.info(f"✅ 打印成功 (Excel)")

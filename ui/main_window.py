@@ -234,6 +234,28 @@ class MainWindow(QMainWindow):
         # 替换原有的打印机设置组
         config_layout.insertWidget(2, paper_group)  # 放在打印机设置下面
 
+        # 在纸张设置组中添加打印参数
+        print_params_group = QGroupBox("打印参数设置")
+        print_params_layout = QHBoxLayout()
+
+        # 黑白打印选项
+        self.bw_print_check = QCheckBox("黑白打印")
+        self.bw_print_check.setFont(QFont("Microsoft YaHei", 12))
+        self.bw_print_check.setChecked(False)
+
+        # 双面打印选项（可选）
+        self.duplex_check = QCheckBox("双面打印")
+        self.duplex_check.setFont(QFont("Microsoft YaHei", 12))
+        self.duplex_check.setChecked(False)
+
+        print_params_layout.addWidget(self.bw_print_check)
+        print_params_layout.addWidget(self.duplex_check)
+        print_params_layout.addStretch()
+        print_params_group.setLayout(print_params_layout)
+
+        # 添加到主布局（放在纸张设置下方）
+        main_layout.insertWidget(1, print_params_group)
+
         # 设置布局间距和对齐
         main_layout.setSpacing(15)
         main_layout.setContentsMargins(20, 20, 20, 20)
@@ -253,6 +275,8 @@ class MainWindow(QMainWindow):
         self.delay_spin.setValue(config.get("delay_seconds", 5))
         self.wait_prompt_check.setChecked(config.get("enable_wait_prompt", True))
         self.wait_sleep_spin.setValue(config.get("wait_prompt_sleep", 30))
+        self.bw_print_check.setChecked(config.get("bw_print", True))
+        self.duplex_check.setChecked(config.get("duplex_print", False))
 
         # 设置纸张默认选择
         if self.paper_size_spin.value() < len(self.paper_sizes):
@@ -279,6 +303,8 @@ class MainWindow(QMainWindow):
             "delay_seconds": self.delay_spin.value(),
             "enable_wait_prompt": self.wait_prompt_check.isChecked(),
             "wait_prompt_sleep": self.wait_sleep_spin.value(),
+            "bw_print": self.bw_print_check.isChecked(),
+            "duplex_print": self.duplex_check.isChecked(),
         }
 
         # 保存默认打印机
@@ -289,6 +315,12 @@ class MainWindow(QMainWindow):
         # 保存月结单打印机
         if hasattr(self, 'monthly_printer_combo'):
             config['monthly_printer_name'] = self.monthly_printer_combo.currentText()
+
+        # 保存打印参数
+        if hasattr(self, 'bw_print'):
+            config['bw_print'] = self.bw_print_check.isChecked()
+        if hasattr(self, 'duplex_print'):
+            config['duplex_print'] = self.duplex_check.isChecked()
 
         self.config_manager.update_config(config)
         if self.config_manager.save_config():

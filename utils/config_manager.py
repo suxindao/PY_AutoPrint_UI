@@ -11,7 +11,9 @@ DEFAULT_CONFIG = {
     "default_paper_zoom": 75,
     "delay_seconds": 5,
     "enable_wait_prompt": True,
-    "wait_prompt_sleep": 30
+    "wait_prompt_sleep": 30,
+    "bw_print": True,
+    "duplex_print": False,
 }
 
 
