@@ -6,7 +6,7 @@
     "delay_seconds": 5.0,
     "enable_wait_prompt": true,
     "wait_prompt_sleep": 30.0,
-    "bw_print": false,
-    "duplex_print": false,
+    "bw_print": true,
+    "duplex_print": true,
     "selected_printer": "Microsoft Print to PDF"
 }

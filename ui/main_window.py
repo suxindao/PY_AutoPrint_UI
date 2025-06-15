@@ -105,7 +105,7 @@ class MainWindow(QMainWindow):
         other_layout = QHBoxLayout()
         other_layout.addWidget(QLabel("打印间隔(秒):"))
         self.delay_spin = QDoubleSpinBox()
-        self.delay_spin.setRange(1, 100)
+        self.delay_spin.setRange(0.01, 100)
         self.delay_spin.setSingleStep(0.5)
         other_layout.addWidget(self.delay_spin)
 
