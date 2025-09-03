@@ -98,6 +98,7 @@ class PrinterCore:
         # printer = self.config.get("selected_printer", win32print.GetDefaultPrinter())
         printer = self.get_printer(use_alt)
         is_bw = self.config.get("bw_print", False)
+        is_print_firstPage = self.config.get("print_firstPage", False)
 
         self.logger.info(f"📄 打印 PDF: {path}")
         self.logger.info(f"🖨️ 打印机: {printer}")
@@ -121,6 +122,7 @@ class PrinterCore:
         # printer = self.config.get("selected_printer", win32print.GetDefaultPrinter())
         printer = self.get_printer(use_alt)
         is_bw = self.config.get("bw_print", False)
+        is_print_firstPage = self.config.get("print_firstPage", False)
 
         self.logger.info(f"")
         self.logger.info(f"📊 打印 Excel: {path}")
@@ -154,7 +156,11 @@ class PrinterCore:
                 if is_bw:
                     sheet.PageSetup.BlackAndWhite = True  # Excel黑白打印属性
 
-            wb.PrintOut(From=1, To=1, ActivePrinter=printer)
+            if is_print_firstPage:
+                wb.PrintOut(From=1, To=1, ActivePrinter=printer)
+            else:
+                wb.PrintOut(ActivePrinter=printer)
+
             self.logger.info(f"✅ 打印成功 (Excel)")
             return True
         except Exception as e:

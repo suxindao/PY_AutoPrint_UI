@@ -248,8 +248,14 @@ class MainWindow(QMainWindow):
         self.duplex_check.setFont(QFont("Microsoft YaHei", 12))
         self.duplex_check.setChecked(False)
 
+        # 只打印第一页（可选）
+        self.print_firstPage_check = QCheckBox("打印首页")
+        self.print_firstPage_check.setFont(QFont("Microsoft YaHei", 12))
+        self.print_firstPage_check.setChecked(False)
+
         print_params_layout.addWidget(self.bw_print_check)
         print_params_layout.addWidget(self.duplex_check)
+        print_params_layout.addWidget(self.print_firstPage_check)
         print_params_layout.addStretch()
         print_params_group.setLayout(print_params_layout)
 
@@ -277,6 +283,7 @@ class MainWindow(QMainWindow):
         self.wait_sleep_spin.setValue(config.get("wait_prompt_sleep", 30))
         self.bw_print_check.setChecked(config.get("bw_print", True))
         self.duplex_check.setChecked(config.get("duplex_print", False))
+        self.print_firstPage_check.setChecked(config.get("print_firstPage", False))
 
         # 设置纸张默认选择
         if self.paper_size_spin.value() < len(self.paper_sizes):
@@ -305,6 +312,7 @@ class MainWindow(QMainWindow):
             "wait_prompt_sleep": self.wait_sleep_spin.value(),
             "bw_print": self.bw_print_check.isChecked(),
             "duplex_print": self.duplex_check.isChecked(),
+            "print_firstPage": self.print_firstPage_check.isChecked(),
         }
 
         # 保存默认打印机
@@ -321,6 +329,8 @@ class MainWindow(QMainWindow):
             config['bw_print'] = self.bw_print_check.isChecked()
         if hasattr(self, 'duplex_print'):
             config['duplex_print'] = self.duplex_check.isChecked()
+        if hasattr(self, 'print_firstPage'):
+            config['print_firstPage'] = self.print_firstPage_check.isChecked()
 
         self.config_manager.update_config(config)
         if self.config_manager.save_config():

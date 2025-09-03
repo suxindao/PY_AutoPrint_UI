@@ -14,6 +14,7 @@ DEFAULT_CONFIG = {
     "wait_prompt_sleep": 30,
     "bw_print": True,
     "duplex_print": False,
+    "print_firstPage": False,
 }
 
 
