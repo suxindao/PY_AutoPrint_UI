@@ -121,6 +121,9 @@ class PrinterCore:
         # 使用主窗口选择的打印机
         # printer = self.config.get("selected_printer", win32print.GetDefaultPrinter())
         printer = self.get_printer(use_alt)
+        is_pdf_printer = "Microsoft Print to PDF" in printer
+
+        self.logger.info(f"✅ Excel已导出为PDF: {is_pdf_printer}")
         is_bw = self.config.get("bw_print", False)
         is_print_firstPage = self.config.get("print_firstPage", False)
 
@@ -156,10 +159,14 @@ class PrinterCore:
                 if is_bw:
                     sheet.PageSetup.BlackAndWhite = True  # Excel黑白打印属性
 
-            if is_print_firstPage:
-                wb.PrintOut(From=1, To=1, ActivePrinter=printer)
+            if is_pdf_printer:
+                # 直接导出为PDF
+                return self.export_excel_to_pdf(excel, wb, path)
             else:
-                wb.PrintOut(ActivePrinter=printer)
+                if is_print_firstPage:
+                    wb.PrintOut(From=1, To=1, ActivePrinter=printer)
+                else:
+                    wb.PrintOut(ActivePrinter=printer)
 
             self.logger.info(f"✅ 打印成功 (Excel)")
             return True
@@ -176,6 +183,32 @@ class PrinterCore:
             except:
                 pass
             pythoncom.CoUninitialize()
+
+    def export_excel_to_pdf(self, excel, wb, original_path):
+        """将Excel直接导出为PDF"""
+        try:
+            # 获取输出目录和文件名
+            output_dir = self.config.get("pdf_output_dir", "")
+            if not output_dir:
+                # 默认使用原文件所在目录
+                output_dir = os.path.dirname(original_path)
+
+            # 生成PDF文件名
+            original_name = os.path.splitext(os.path.basename(original_path))[0]
+            pdf_filename = f"{original_name}.pdf"
+            pdf_path = os.path.join(output_dir, pdf_filename)
+
+            # 确保目录存在
+            os.makedirs(output_dir, exist_ok=True)
+
+            # 导出为PDF
+            wb.ExportAsFixedFormat(0, pdf_path)  # 0 = PDF格式
+            self.logger.info(f"✅ Excel已导出为PDF: {pdf_path}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"❌ 导出PDF失败: {str(e)}")
+            return False
 
     def move_and_cleanup(self, src_file, src_root, target_root):
         rel_path = os.path.relpath(src_file, src_root)
